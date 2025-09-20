@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 
 #define PORT 8080
+#define DATABASE_USER_NOT_FOUND 4
+#define DATABASE_USER_FOUND 3
 
 class ServerHandler {
 public:
@@ -24,7 +26,7 @@ private:
     int client_fd;
     bool isActive;
     
-    void waitForServer();
+    int waitForServer();
     int openSocket();
     void closeSocket();
     int sendMessage(const std::string& data);

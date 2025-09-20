@@ -19,6 +19,23 @@ int ClientHandler::startCommunication(){
 
 void ClientHandler::waitForClient() {
     while (isActive){
+        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
+            syslog(LOG_ERR, "Accept failed");
+            sleep(2);
+            continue;
+        }
+
+        syslog(LOG_INFO, "Client connected");
+
+        handleClient();
+        
+        close(new_socket);
+        syslog(LOG_INFO, "Client disconnected, waiting for new connection");
+    }
+}
+
+void ClientHandler::handleClient() {
+    while (true) {
         valread = read(new_socket, buffer, 1024 - 1);
         if (valread > 0) {
             buffer[valread] = '\0';
@@ -30,6 +47,7 @@ void ClientHandler::waitForClient() {
             syslog(LOG_ERR, "Read error");
             break;
         }
+        sleep(2);
     }
 }
 
@@ -70,13 +88,6 @@ int ClientHandler::openSocket(){
     }
 
     syslog(LOG_INFO, "Server listening on port %d", PORT);
-
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) < 0) {
-        syslog(LOG_ERR, "Accept failed");
-        return 1;
-    }
-
-    syslog(LOG_INFO, "Client connected");
     isActive = true;
     return 0;
 }
@@ -87,4 +98,3 @@ void ClientHandler::closeSocket(){
     isActive = false;
     syslog(LOG_INFO, "Socket closed");
 }
-

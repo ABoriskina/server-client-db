@@ -15,16 +15,16 @@ int ServerHandler::startCommunication(const std::string& data) {
         return -1;
     }
     
-    waitForServer();
+    int result = waitForServer();
     closeSocket();
-    return 0;
+    return result;
 }
 
-void ServerHandler::waitForServer() {
+int ServerHandler::waitForServer() {
     valread = read(client_fd, buffer, sizeof(buffer) - 1);
     if (valread > 0) {
         buffer[valread] = '\0';
-        handleMessage(buffer);
+        return handleMessage(buffer);
     } else {
         syslog(LOG_ERR, "Read from server failed");
     }
@@ -34,8 +34,10 @@ int ServerHandler::handleMessage(const char* data) {
     std::string response(data);
     if (response == "true") {
         syslog(LOG_INFO, "Authentication successful");
+        return DATABASE_USER_FOUND;
     } else {
         syslog(LOG_WARNING, "Authentication failed");
+        return DATABASE_USER_NOT_FOUND;
     }
     return 0;
 }

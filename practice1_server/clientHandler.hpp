@@ -28,6 +28,7 @@ private:
     char buffer[1024];
 
     void waitForClient();
+    void handleClient();
     int openSocket();
     void closeSocket();
     int handleMessage(const std::string&);

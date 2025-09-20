@@ -31,10 +31,10 @@ void MainWindow::on_pushButton_enter_clicked() {
         ServerHandler serverHandler;
         int result = serverHandler.startCommunication(data);
         QMetaObject::invokeMethod(this, [this, result]() {
-            if (result == 0) {
+            if (result == DATABASE_USER_FOUND) {
                 QMessageBox::information(this, "Успех", "Авторизация прошла успешно!");
             } else {
-                QMessageBox::critical(this, "Ошибка", "Ошибка соединения с сервером");
+                QMessageBox::critical(this, "Ошибка", "Ошибка авторизации!");
             }
         });
     }).detach();

@@ -5,7 +5,7 @@
 #include <iostream>
 
 int main(){
-    openlog("Practice1_server", LOG_PID | LOG_NDELAY, LOG_LOCAL0);
+    openlog("practice1_server", LOG_PID | LOG_NDELAY, LOG_LOCAL0);
     syslog(LOG_INFO, "Server starting");
     
     try {
