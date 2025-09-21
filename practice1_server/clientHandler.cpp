@@ -67,6 +67,7 @@ void ClientHandler::handleClient() {
 }
 
 int ClientHandler::handleMessage(const std::string& data) {
+    
     int result = dbapi->getDataFromDB(data);
     
     std::string response;

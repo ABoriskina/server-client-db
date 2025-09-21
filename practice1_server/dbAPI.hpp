@@ -18,6 +18,8 @@ public:
 private:
     int setConnection();
     int closeConnection();
+    std::pair <std::string, std::string> setPasswordHash(const std::string& password);
+    std::string getPasswordHash(const std::string& salt, const std::string& password);
     pqxx::connection* connection;
 };
 

@@ -58,9 +58,9 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>130</y>
+      <y>140</y>
       <width>511</width>
-      <height>321</height>
+      <height>351</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -88,7 +88,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="mainWindow.qrc">:/resources/images/logo.png</pixmap>
+      <pixmap resource="resources/mainwindow.qrc">:/resources/images/logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -100,7 +100,7 @@
        <x>70</x>
        <y>110</y>
        <width>361</width>
-       <height>132</height>
+       <height>176</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -150,13 +150,29 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_register">
+        <property name="styleSheet">
+         <string notr="true">QPushButton{
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    padding: 8px;
+	color:white;
+    background-color: #90ab50;
+}</string>
+        </property>
+        <property name="text">
+         <string>Зарегистрироваться</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
     <widget class="QPushButton" name="pushButton_quit">
      <property name="geometry">
       <rect>
-       <x>270</x>
-       <y>250</y>
+       <x>340</x>
+       <y>300</y>
        <width>161</width>
        <height>41</height>
       </rect>
@@ -189,6 +205,7 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
+  <include location="resources/mainwindow.qrc"/>
   <include location="mainWindow.qrc"/>
  </resources>
  <connections/>

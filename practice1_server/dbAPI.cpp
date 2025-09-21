@@ -1,4 +1,5 @@
 #include "dbAPI.hpp"
+#include "hash.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -9,47 +10,82 @@ dbAPI::~dbAPI() {
     closeConnection();
 }
 
-std::pair<std::string, std::string> parseClientData(const std::string& data) {
-    size_t colon_pos = data.find(':');
-    if (colon_pos == std::string::npos) {
-        return {data, ""};
+std::tuple<std::string, std::string, std::string> parseClientData(const std::string& data) {
+    size_t first_colon = data.find(':');
+    if (first_colon == std::string::npos) {
+        return {"", "", ""};
     }
     
-    std::string login = data.substr(0, colon_pos);
-    std::string password = data.substr(colon_pos + 1);
+    std::string method = data.substr(0, first_colon);
+    std::string remaining = data.substr(first_colon + 1);
     
-    return {login, password};
+    size_t second_colon = remaining.find(':');
+    if (second_colon == std::string::npos) {
+        return {method, remaining, ""};
+    }
+    
+    std::string login = remaining.substr(0, second_colon);
+    std::string password = remaining.substr(second_colon + 1);
+    
+    return {method, login, password};
 }
 
 int dbAPI::getDataFromDB(std::string data) {
     try {
-        auto [login, password] = parseClientData(data);
-        syslog(LOG_INFO, "Received login: %s", login.c_str());
+        auto [method, login, password] = parseClientData(data);
+        if (method == "login") {
+            syslog(LOG_INFO, "Received login: %s", login.c_str());
 
-        if (!connection || !connection->is_open()) {
-            if (setConnection() != DATABASE_CONN_OK) {
-                syslog(LOG_ERR, "No database connection");
-                return DATABASE_CONN_ERR;
+            if (!connection || !connection->is_open()) {
+                if (setConnection() != DATABASE_CONN_OK) {
+                    syslog(LOG_ERR, "No database connection");
+                    return DATABASE_CONN_ERR;
+                }
             }
+            pqxx::work txn(*connection);
+            std::string query = "SELECT salt from users WHERE login = $1";
+            pqxx::result result = txn.exec_params(query, login);
+            if (result.empty()) {
+                syslog(LOG_INFO, "No hash-data found for login: %s", login.c_str());
+                return DATABASE_USER_NOT_FOUND;
+            }
+
+            std::string u_salt = result[0]["salt"].as<std::string>();
+            query = "SELECT name, groupid FROM users WHERE login = $1 AND pass = $2";
+            std::string u_password = getPasswordHash(u_salt, password);
+            result = txn.exec_params(query, login, u_password);
+
+            if (result.empty()) {
+                syslog(LOG_INFO, "No data found for login: %s", login.c_str());
+                return DATABASE_USER_NOT_FOUND;
+            }
+
+            for (auto row : result) {
+                std::cout << "User found: " << row["name"].as<std::string>() 
+                            << ", Permission group: " << row["groupid"].as<int>() << std::endl;
+            }
+
+            txn.commit();
+            return DATABASE_USER_FOUND;
         }
+        else if (method == "register") {
+            syslog(LOG_INFO, "New user with login: %s", login.c_str());
 
-        pqxx::work txn(*connection);
-        std::string query = "SELECT * FROM users WHERE login = $1 AND pass = $2";
-        pqxx::result result = txn.exec_params(query, login, password);
+            if (!connection || !connection->is_open()) {
+                if (setConnection() != DATABASE_CONN_OK) {
+                    syslog(LOG_ERR, "No database connection");
+                    return DATABASE_CONN_ERR;
+                }
+            }
 
-        if (result.empty()) {
-            syslog(LOG_INFO, "No data found for login: %s", login.c_str());
-            return DATABASE_USER_NOT_FOUND;
+            pqxx::work txn(*connection);
+            std::string query = "INSERT into users (login, pass, salt, name, groupid) VALUES ($1, $2, $3, $4, 2)";
+            auto [salt, hash] = setPasswordHash(password);
+            pqxx::result result = txn.exec_params(query, login, hash, salt, login);
+
+            txn.commit();
+            return DATABASE_USER_FOUND;
         }
-
-        for (auto row : result) {
-            std::cout << "User found: " << row["login"].as<std::string>() 
-                      << ", ID: " << row["id"].as<int>() << std::endl;
-        }
-
-        txn.commit();
-        return DATABASE_USER_FOUND;
-
     } catch (const std::exception &e) {
         syslog(LOG_ERR, "Database error in getDataFromDB: %s", e.what());
         return DATABASE_CONN_ERR;
@@ -81,7 +117,7 @@ int dbAPI::setConnection() {
         connection = new pqxx::connection(connectionString);
 
         if (connection->is_open()) {
-            syslog(LOG_INFO, "Connection established");
+            syslog(LOG_INFO, "Connection with database established");
             return DATABASE_CONN_OK;
         }
         
@@ -101,4 +137,15 @@ int dbAPI::closeConnection() {
         syslog(LOG_INFO, "Connection closed");
     }
     return DATABASE_CONN_CLOSED;
+}
+
+std::pair <std::string, std::string> dbAPI::setPasswordHash(const std::string& password) {
+    std::string salt = generate_salt(16);
+    std::string password_hash = hash_password(password, salt);
+    return {salt, password_hash};
+}
+
+std::string dbAPI::getPasswordHash(const std::string& salt, const std::string& password) {
+    std::string password_hash = hash_password(password, salt);
+    return password_hash;
 }
