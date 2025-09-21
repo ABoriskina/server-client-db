@@ -38,22 +38,32 @@ void ClientHandler::waitForClient() {
 void ClientHandler::handleClient() {
     try {
         ssl = tls_wrap_fd_as_server(ctx, new_socket);
+        if (!ssl) {
+            syslog(LOG_ERR, "TLS wrap failed");
+            close(new_socket);
+            return;
+        }
+
         while (true) {
             char socketBuffer[1024];
             int len = tls_recv(ssl, socketBuffer, sizeof(socketBuffer));
-            if (len <= 0)
+            
+            if (len == 0) {
+                syslog(LOG_INFO, "Client closed connection gracefully");
                 break;
-            std::string message(socketBuffer, socketBuffer + len);
-            handleMessage(message);
+            } else if (len < 0) {
+                int ssl_error = SSL_get_error(ssl, len);
+                syslog(LOG_INFO, "TLS error: %d", ssl_error);
+                break;
+            } else {
+                std::string message(socketBuffer, len);
+                handleMessage(message);
+            }
         }
-        if (ssl){
-            tls_close(ssl);
-            ssl = nullptr;
-            close(new_socket);
-        }           
+
     } catch(const std::exception& e){
-        syslog(LOG_ERR, "TLS err %s", e.what());
-    }    
+        syslog(LOG_ERR, "TLS exception: %s", e.what());
+    }
 }
 
 int ClientHandler::handleMessage(const std::string& data) {
@@ -99,8 +109,10 @@ int ClientHandler::openSocket(){
 
 void ClientHandler::closeSocket(){
     tls_close(ssl);
-    if (new_socket >= 0) close(new_socket);
-    if (server_fd >= 0) close(server_fd);
+    if (new_socket >= 0) 
+        close(new_socket);
+    if (server_fd >= 0) 
+        close(server_fd);
     isActive = false;
     syslog(LOG_INFO, "Socket closed");
 }
