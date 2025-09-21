@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <arpa/inet.h>
+#include "../practice1_server/tls.hpp"
 
 #define PORT 8080
 #define DATABASE_USER_NOT_FOUND 4
@@ -25,7 +26,9 @@ private:
     int valread;
     int client_fd;
     bool isActive;
-    
+    SSL* ssl;
+    SSL_CTX* ctx;
+
     int waitForServer();
     int openSocket();
     void closeSocket();

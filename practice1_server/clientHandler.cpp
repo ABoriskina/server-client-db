@@ -2,11 +2,15 @@
 
 ClientHandler::~ClientHandler() {
     delete dbapi;
+    if (ctx) 
+        SSL_CTX_free(ctx);
 }
 
 int ClientHandler::startCommunication(){
     dbapi = new dbAPI();
+    ctx = tls_server_ctx("certs/server.crt", "certs/server.key");
     if (openSocket() != 0) {
+        SSL_CTX_free(ctx);
         delete dbapi;
         return 1;
     }
@@ -24,43 +28,44 @@ void ClientHandler::waitForClient() {
             sleep(2);
             continue;
         }
-
         syslog(LOG_INFO, "Client connected");
-
         handleClient();
-        
-        close(new_socket);
         syslog(LOG_INFO, "Client disconnected, waiting for new connection");
+        usleep(10000);
     }
 }
 
 void ClientHandler::handleClient() {
-    while (true) {
-        valread = read(new_socket, buffer, 1024 - 1);
-        if (valread > 0) {
-            buffer[valread] = '\0';
-            handleMessage(std::string(buffer));
-        } else if (valread == 0) {
-            syslog(LOG_INFO, "Client disconnected");
-            break;
-        } else {
-            syslog(LOG_ERR, "Read error");
-            break;
+    try {
+        ssl = tls_wrap_fd_as_server(ctx, new_socket);
+        while (true) {
+            char socketBuffer[1024];
+            int len = tls_recv(ssl, socketBuffer, sizeof(socketBuffer));
+            if (len <= 0)
+                break;
+            std::string message(socketBuffer, socketBuffer + len);
+            handleMessage(message);
         }
-        sleep(2);
-    }
+        if (ssl){
+            tls_close(ssl);
+            ssl = nullptr;
+            close(new_socket);
+        }           
+    } catch(const std::exception& e){
+        syslog(LOG_ERR, "TLS err %s", e.what());
+    }    
 }
 
 int ClientHandler::handleMessage(const std::string& data) {
     int result = dbapi->getDataFromDB(data);
     
-    const char* response;
+    std::string response;
     if (result == DATABASE_USER_FOUND) {
         response = "true";
     } else {
         response = "false";
     }
-    send(new_socket, response, strlen(response), 0);
+    tls_send(ssl, response.data(), (int)response.size());
     return 0;
 }
 
@@ -93,6 +98,7 @@ int ClientHandler::openSocket(){
 }
 
 void ClientHandler::closeSocket(){
+    tls_close(ssl);
     if (new_socket >= 0) close(new_socket);
     if (server_fd >= 0) close(server_fd);
     isActive = false;

@@ -2,6 +2,10 @@
 #include <iostream>
 
 ServerHandler::~ServerHandler() {
+    if (ctx) {
+        SSL_CTX_free(ctx);
+        ctx = nullptr;
+    }
     closeSocket();
 }
 
@@ -21,13 +25,15 @@ int ServerHandler::startCommunication(const std::string& data) {
 }
 
 int ServerHandler::waitForServer() {
-    valread = read(client_fd, buffer, sizeof(buffer) - 1);
-    if (valread > 0) {
-        buffer[valread] = '\0';
-        return handleMessage(buffer);
+    char message[1024];
+    int len = tls_recv(ssl, message, sizeof(message));
+    std::string(message, message + len);
+    if (len > 0) {
+        return handleMessage(message);
     } else {
         syslog(LOG_ERR, "Read from server failed");
     }
+    return 1;
 }
 
 int ServerHandler::handleMessage(const char* data) {
@@ -43,11 +49,9 @@ int ServerHandler::handleMessage(const char* data) {
 }
 
 int ServerHandler::sendMessage(const std::string& data) {
-    ssize_t bytes_sent = send(client_fd, data.c_str(), data.length(), 0);
-    if (bytes_sent < 0) {
-        syslog(LOG_ERR, "Send failed");
-        return -1;
-    }
+    ctx = tls_client_ctx("certs/server.crt");
+    ssl = tls_wrap_fd_as_client(ctx, client_fd, "localhost");
+    tls_send(ssl, data.data(), (int)data.size());
     return 0;
 }
 
@@ -78,6 +82,10 @@ int ServerHandler::openSocket() {
 }
 
 void ServerHandler::closeSocket() {
+    if (ssl){
+        tls_close(ssl);
+        ssl = nullptr;
+    }
     if (client_fd >= 0) {
         close(client_fd);
         client_fd = -1;

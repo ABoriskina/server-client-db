@@ -6,6 +6,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 add_executable(practice1 
     main.cpp
@@ -17,4 +18,8 @@ add_executable(practice1
     serverHandler.hpp
 )
 
-target_link_libraries(practice1 PRIVATE Qt6::Widgets)
+target_link_libraries(practice1 PRIVATE 
+    Qt6::Widgets 
+    OpenSSL::SSL 
+    OpenSSL::Crypto
+)

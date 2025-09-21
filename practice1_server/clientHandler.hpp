@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include "dbAPI.hpp"
+#include "tls.hpp"
 #define PORT 8080
 
 class ClientHandler {
@@ -25,7 +26,8 @@ private:
     int opt = 1;
     socklen_t addrlen = sizeof(address);
     bool isActive = false;
-    char buffer[1024];
+    SSL* ssl;
+    SSL_CTX* ctx;
 
     void waitForClient();
     void handleClient();

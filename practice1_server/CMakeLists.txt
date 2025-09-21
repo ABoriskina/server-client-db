@@ -8,6 +8,7 @@ set(PQXX_INCLUDE_DIR "/usr/include")
 set(PQXX_LIBRARY "/usr/lib/x86_64-linux-gnu/libpqxx.so")
 
 find_package(PostgreSQL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 add_executable(practice1_server
     main.cpp
@@ -23,4 +24,6 @@ target_include_directories(practice1_server PRIVATE
 target_link_libraries(practice1_server PRIVATE
     ${PQXX_LIBRARY}
     ${PostgreSQL_LIBRARIES}
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )

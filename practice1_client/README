@@ -1,18 +1,9 @@
-Building and Running:
-    Create a build directory: mkdir build && cd build
-    Configure CMake: cmake ..
-    Build the project: cmake --build .
-    Run the application: ./MyQtApp (or the name you specified in add_executable)
+First Building and Running:
+    mkdir build && cd build
+    cmake ..
+    cmake --build .
+    ./practice1 or export $(cat .env | xargs) && ./practice1_server
 
 Start Designer:
     /usr/lib/qt6/bin/designer
-
-
-
-export $(cat .env | xargs) && ./practice1_server
-
-practice server
-build/ :
-cmake .. 
-make practice1_server
-        
+     
