@@ -6,3 +6,5 @@ openssl req -x509 -in certs/server.req -text -key certs/server.key -out certs/se
 sudo chown 999:999 certs/server.key
 chmod 600 certs/server.key
 chmod 644 certs/server.crt
+
+cp certs/server.crt ../practice1_server/build/certs/server_postgres.crt

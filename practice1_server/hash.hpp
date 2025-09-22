@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <sstream>
 
-inline std::string generate_salt(size_t length = 16) {
+inline std::string generateSalt(size_t length = 16) {
     unsigned char* salt = new unsigned char[length];
     if (RAND_bytes(salt, length) != 1) {
         delete[] salt;
@@ -20,7 +20,7 @@ inline std::string generate_salt(size_t length = 16) {
     return ss.str();
 }
 
-inline std::string hash_password(const std::string& password, const std::string& salt) {
+inline std::string hashPassword(const std::string& password, const std::string& salt) {
     std::string combined = salt + password;
     unsigned char hash[SHA256_DIGEST_LENGTH];
     

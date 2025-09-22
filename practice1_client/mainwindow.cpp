@@ -31,7 +31,7 @@ void MainWindow::on_pushButton_register_clicked() {
         ServerHandler serverHandler;
         int result = serverHandler.startCommunication(data);
         QMetaObject::invokeMethod(this, [this, result]() {
-            if (result == DATABASE_USER_FOUND) {
+            if (result == DATABASE_USER_OK) {
                 QMessageBox::information(this, "Успех", "Регистрация прошла успешно!");
             } else {
                 QMessageBox::critical(this, "Ошибка", "Ошибка регистрации!");

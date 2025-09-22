@@ -5,6 +5,7 @@
 #include <pqxx/pqxx>
 
 #define DATABASE_USER_NOT_FOUND 4
+#define DATABASE_USER_OK 3
 #define DATABASE_USER_FOUND 3
 #define DATABASE_CONN_CLOSED 2
 #define DATABASE_CONN_ERR 1

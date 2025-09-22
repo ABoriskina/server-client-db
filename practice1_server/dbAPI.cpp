@@ -11,21 +11,21 @@ dbAPI::~dbAPI() {
 }
 
 std::tuple<std::string, std::string, std::string> parseClientData(const std::string& data) {
-    size_t first_colon = data.find(':');
-    if (first_colon == std::string::npos) {
+    size_t firstColon = data.find(':');
+    if (firstColon == std::string::npos) {
         return {"", "", ""};
     }
     
-    std::string method = data.substr(0, first_colon);
-    std::string remaining = data.substr(first_colon + 1);
+    std::string method = data.substr(0, firstColon);
+    std::string remaining = data.substr(firstColon + 1);
     
-    size_t second_colon = remaining.find(':');
-    if (second_colon == std::string::npos) {
+    size_t secondColon = remaining.find(':');
+    if (secondColon == std::string::npos) {
         return {method, remaining, ""};
     }
     
-    std::string login = remaining.substr(0, second_colon);
-    std::string password = remaining.substr(second_colon + 1);
+    std::string login = remaining.substr(0, secondColon);
+    std::string password = remaining.substr(secondColon + 1);
     
     return {method, login, password};
 }
@@ -84,7 +84,7 @@ int dbAPI::getDataFromDB(std::string data) {
             pqxx::result result = txn.exec_params(query, login, hash, salt, login);
 
             txn.commit();
-            return DATABASE_USER_FOUND;
+            return DATABASE_USER_OK;
         }
     } catch (const std::exception &e) {
         syslog(LOG_ERR, "Database error in getDataFromDB: %s", e.what());
@@ -113,7 +113,8 @@ int dbAPI::setConnection() {
             "dbname=" + std::string(dbName) + " " +
             "user=" + std::string(dbUser) + " " +
             "password=" + std::string(dbPass) + " " +
-            "sslmode=require";
+            "sslmode=verify-full" + " " +
+            "sslrootcert=./certs/server_postgres.crt";
 
         connection = new pqxx::connection(connectionString);
 
@@ -141,12 +142,12 @@ int dbAPI::closeConnection() {
 }
 
 std::pair <std::string, std::string> dbAPI::setPasswordHash(const std::string& password) {
-    std::string salt = generate_salt(16);
-    std::string password_hash = hash_password(password, salt);
-    return {salt, password_hash};
+    std::string salt = generateSalt(16);
+    std::string passwordHash = hashPassword(password, salt);
+    return {salt, passwordHash};
 }
 
 std::string dbAPI::getPasswordHash(const std::string& salt, const std::string& password) {
-    std::string password_hash = hash_password(password, salt);
-    return password_hash;
+    std::string passwordHash = hashPassword(password, salt);
+    return passwordHash;
 }

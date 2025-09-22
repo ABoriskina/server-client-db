@@ -83,7 +83,18 @@ inline int tls_send(SSL* ssl, const void* data, int len) {
 
 inline int tls_recv(SSL* ssl, void* buf, int buflen) {
     int n = SSL_read(ssl, buf, buflen);
-    if(n <= 0) throw std::runtime_error("SSL_read: "+tls_err());
+    if (n <= 0) {
+        int ssl_error = SSL_get_error(ssl, n);
+        if (ssl_error == SSL_ERROR_ZERO_RETURN) {
+            return 0;
+        }
+        else if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+            return -1;
+        }
+        else {
+            throw std::runtime_error("SSL_read error: " + std::to_string(ssl_error));
+        }
+    }
     return n;
 }
 

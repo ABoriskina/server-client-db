@@ -12,6 +12,7 @@
 
 #define PORT 8080
 #define DATABASE_USER_NOT_FOUND 4
+#define DATABASE_USER_OK 3
 #define DATABASE_USER_FOUND 3
 
 class ServerHandler {
