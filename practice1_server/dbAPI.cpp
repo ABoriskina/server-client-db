@@ -112,7 +112,8 @@ int dbAPI::setConnection() {
             "port=" + std::string(dbPort) + " " +
             "dbname=" + std::string(dbName) + " " +
             "user=" + std::string(dbUser) + " " +
-            "password=" + std::string(dbPass);
+            "password=" + std::string(dbPass) + " " +
+            "sslmode=require";
 
         connection = new pqxx::connection(connectionString);
 

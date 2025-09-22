@@ -13,6 +13,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./certs:/var/lib/postgresql/certs:ro
+    command: 
+      [
+        "-c", "ssl=on",
+        "-c", "ssl_cert_file=/var/lib/postgresql/certs/server.crt",
+        "-c", "ssl_key_file=/var/lib/postgresql/certs/server.key"
+      ]
     restart: unless-stopped
 
 volumes:

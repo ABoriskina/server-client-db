@@ -1,3 +1,4 @@
 practice1_client/build
 practice1_server/build
 practice1_server/env.env
+postgres/certs
